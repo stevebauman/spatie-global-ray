@@ -11,6 +11,7 @@ $packages = [
     'spatie/yii-ray',
     'spatie/craft-ray',
     'spatie/laravel-ray',
+    'spatie/wordpress-ray',
 ];
 
 $composerJson = getcwd() . '/composer.json';
