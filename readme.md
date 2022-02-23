@@ -3,5 +3,5 @@
 ## Installation
 
 ```bash
-composer global require stevebauman/spatie-global-ray && ray install
+composer global require stevebauman/spatie-global-ray:dev-master && ray install
 ```
