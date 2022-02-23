@@ -30,11 +30,18 @@ class InstallCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // Before installing, we will make sure to clear the
+        // option inside of the ini so we can safely
+        // replace the phar without PHP crashing.
+        $this->updateAutoPrependFileOptionInPhpIni(null);
+
         if (! file_exists($this->getPharPath())) {
             $this->generateSpatieRayPhar($output);
         }
 
-        $this->updateAutoPrependFileOptionInPhpIni();
+        $this->updateAutoPrependFileOptionInPhpIni(
+            $this->getPharPath()
+        );
         
         return static::SUCCESS;
     }
@@ -51,7 +58,7 @@ class InstallCommand extends Command
         $result = Terminal::builder()
             ->output($output)
             ->in('generator')
-            ->run('composer build');
+            ->run('composer install && composer build');
 
         if (! $result->successful()) {
             throw new \Exception($result->output());
@@ -61,17 +68,17 @@ class InstallCommand extends Command
     /**
      * Update the auto prepend file option in the PHP ini.
      *
+     * @param string|null $value
+     *
      * @return void
      */
-    protected function updateAutoPrependFileOptionInPhpIni()
+    protected function updateAutoPrependFileOptionInPhpIni($value = null)
     {
         $iniPath = get_cfg_var('cfg_file_path');
 
         $contents = file_get_contents($iniPath);
 
-        $pharPath = $this->getPharPath();
-
-        $option = "auto_prepend_file = {$pharPath}\n";
+        $option = "auto_prepend_file = {$value}\n";
 
         if ($line = $this->findOptionInPhpIni($iniPath, 'auto_prepend_file')) {
             $contents = str_replace($line, $option, $contents);
