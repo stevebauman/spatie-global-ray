@@ -2,7 +2,6 @@
 
 namespace Stevebauman\SpatieGlobalRay;
 
-use Exception;
 use TitasGailius\Terminal\Terminal;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -43,7 +42,9 @@ class InstallCommand extends Command
         $ini->update('auto_prepend_file', null);
 
         if (! file_exists($this->getRestingRayPharPath())) {
-            $this->generateRayPhar($output);
+            if (! $this->generateRayPhar($output)) {
+                return static::FAILURE;
+            }
 
             rename(
                 $this->getGeneratedRayPharPath(),
@@ -61,7 +62,7 @@ class InstallCommand extends Command
      *
      * @param OutputInterface $output
      *
-     * @return void
+     * @return bool
      */
     protected function generateRayPhar(OutputInterface $output)
     {
@@ -70,9 +71,7 @@ class InstallCommand extends Command
             ->in('generator')
             ->run('composer install && composer build');
 
-        if (! $result->successful()) {
-            throw new Exception('Failed generating ray phar.');
-        }
+        return $result->successful();
     }
 
     /**
