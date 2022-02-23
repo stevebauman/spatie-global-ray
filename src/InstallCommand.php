@@ -68,7 +68,7 @@ class InstallCommand extends Command
     {
         $result = Terminal::builder()
             ->output($output)
-            ->in(__DIR__.'/generator')
+            ->in(__DIR__.'/../generator')
             ->run('composer install && composer build');
 
         return $result->successful();
