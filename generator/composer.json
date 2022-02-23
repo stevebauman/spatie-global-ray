@@ -3,7 +3,7 @@
         "spatie/ray": "^1.0"
     },
     "require-dev": {
-        "bamarni/composer-bin-plugin": "^1.5"
+        "humbug/box": "^3.16"
     },
     "config": {
         "allow-plugins": {

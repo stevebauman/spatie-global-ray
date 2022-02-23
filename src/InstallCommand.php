@@ -2,9 +2,11 @@
 
 namespace Stevebauman\SpatieGlobalRay;
 
+use Exception;
 use TitasGailius\Terminal\Terminal;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class InstallCommand extends Command
@@ -18,7 +20,8 @@ class InstallCommand extends Command
     {
         $this
             ->setName('install')
-            ->setDescription('Install Spatie Ray globally.');
+            ->setDescription('Install Spatie Ray globally.')
+            ->addOption('ini', null, InputOption::VALUE_REQUIRED, 'The full path to the PHP ini that should be updated');
     }
 
     /**
@@ -30,18 +33,25 @@ class InstallCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $ini = new PhpIni(
+            $input->getOption('ini') ?? get_cfg_var('cfg_file_path')
+        );
+
         // Before installing, we will make sure to clear the
         // option inside of the ini so we can safely
         // replace the phar without PHP crashing.
-        $this->updateAutoPrependFileOptionInPhpIni(null);
+        $ini->update('auto_prepend_file', null);
 
-        if (! file_exists($this->getPharPath())) {
-            $this->generateSpatieRayPhar($output);
+        if (! file_exists($this->getRestingRayPharPath())) {
+            $this->generateRayPhar($output);
+
+            rename(
+                $this->getGeneratedRayPharPath(),
+                $this->getRestingRayPharPath()
+            );
         }
 
-        $this->updateAutoPrependFileOptionInPhpIni(
-            $this->getPharPath()
-        );
+        $ini->update('auto_prepend_file', $this->getLoaderPath());
         
         return static::SUCCESS;
     }
@@ -53,7 +63,7 @@ class InstallCommand extends Command
      *
      * @return void
      */
-    protected function generateSpatieRayPhar(OutputInterface $output)
+    protected function generateRayPhar(OutputInterface $output)
     {
         $result = Terminal::builder()
             ->output($output)
@@ -61,32 +71,18 @@ class InstallCommand extends Command
             ->run('composer install && composer build');
 
         if (! $result->successful()) {
-            throw new \Exception($result->output());
+            throw new Exception('Failed generating ray phar.');
         }
     }
-    
+
     /**
-     * Update the auto prepend file option in the PHP ini.
+     * Get the path to the ray loader file.
      *
-     * @param string|null $value
-     *
-     * @return void
+     * @return string
      */
-    protected function updateAutoPrependFileOptionInPhpIni($value = null)
+    protected function getLoaderPath()
     {
-        $iniPath = get_cfg_var('cfg_file_path');
-
-        $contents = file_get_contents($iniPath);
-
-        $option = "auto_prepend_file = {$value}\n";
-
-        if ($line = $this->findOptionInPhpIni($iniPath, 'auto_prepend_file')) {
-            $contents = str_replace($line, $option, $contents);
-        } else {
-            $contents = $option . $contents;
-        }
-    
-        file_put_contents($iniPath, $contents);
+        return __DIR__ . "/../loader.php";
     }
 
     /**
@@ -94,29 +90,20 @@ class InstallCommand extends Command
      *
      * @return string
      */
-    protected function getPharPath()
+    protected function getGeneratedRayPharPath()
     {
-        return __DIR__ . '/../generator/phar/ray.phar';
+        return __DIR__ . "/../generator/ray.phar";
     }
 
     /**
-     * FInd the option in the given ini.
+     * Get the generated ray phar path.
      *
-     * @param string $iniPath
-     * @param string $option
-     *
-     * @return string|false
+     * @return string
      */
-    protected function findOptionInPhpIni($iniPath, $option)
+    protected function getRestingRayPharPath()
     {
-        $lines = file($iniPath);
+        preg_match("#^\d.\d#", PHP_VERSION, $match);
 
-        foreach ($lines as $line) {
-            if (strpos($line, $option) !== false) {
-                return $line;
-            }
-        }
-
-        return false;
+        return __DIR__ . "/../generator/phars/ray_php_{$match[0]}.phar";
     }
 }

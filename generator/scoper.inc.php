@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'prefix' => 'Spatie\\GlobalRay',
+    'prefix' => 'Global',
     'expose-functions' => ['ray', 'rd'],
 ];
