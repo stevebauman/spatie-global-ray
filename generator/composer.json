@@ -1,0 +1,23 @@
+{
+    "name": "stevebauman/ray-phar",
+    "authors": [
+        {
+            "name": "Steve Bauman",
+            "email": "steven_bauman@outlook.com"
+        }
+    ],
+    "require": {
+        "spatie/ray": "^1.33"
+    },
+    "require-dev": {
+        "bamarni/composer-bin-plugin": "^1.5"
+    },
+    "config": {
+        "allow-plugins": {
+            "bamarni/composer-bin-plugin": true
+        }
+    },
+    "scripts": {
+        "build": "vendor/bin/box compile"
+    }
+}
